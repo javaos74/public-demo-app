@@ -1,0 +1,151 @@
+// 민원 처리 시연용 앱 - 데이터베이스 스키마 정의
+// SQLite 데이터베이스를 사용하며, Prisma ORM으로 관리합니다.
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// 사용자 역할 열거형 (민원_신청인, 담당자, 승인권자)
+enum UserRole {
+  APPLICANT
+  OFFICER
+  APPROVER
+}
+
+// 민원 상태 열거형 (접수완료 → 검토중 → 처리완료 → 결재대기 → 승인완료/반려)
+enum ComplaintStatus {
+  RECEIVED
+  REVIEWING
+  PROCESSED
+  PENDING_APPROVAL
+  APPROVED
+  REJECTED
+}
+
+// 민원 처리 유형 열거형 (승인, 반려, 보류, 이관)
+enum ProcessType {
+  APPROVE
+  REJECT
+  HOLD
+  TRANSFER
+}
+
+// 결재 상태 열거형 (대기, 승인, 반려)
+enum ApprovalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+// 사용자 모델 - 사전 등록된 사용자 (민원_신청인, 담당자, 승인권자)
+model User {
+  id        Int      @id @default(autoincrement())
+  userId    String   @unique
+  password  String
+  name      String
+  role      UserRole
+  phone     String   @default("")
+  createdAt DateTime @default(now())
+
+  complaints          Complaint[]          @relation("ApplicantComplaints")
+  processedComplaints Complaint[]          @relation("ProcessedByOfficer")
+  requestedApprovals  Approval[]           @relation("RequesterApprovals")
+  decidedApprovals    Approval[]           @relation("ApproverApprovals")
+  mockStatus          MockApplicantStatus?
+}
+
+// 민원 유형 모델 - 전입신고, 건축허가, 사업자등록, 주민등록등본 발급 등
+model ComplaintType {
+  id          Int         @id @default(autoincrement())
+  name        String
+  description String      @default("")
+  isActive    Boolean     @default(true)
+  complaints  Complaint[]
+}
+
+// 민원 모델 - 민원 접수, 검토, 처리 정보를 저장
+model Complaint {
+  id            Int             @id @default(autoincrement())
+  receiptNumber String          @unique
+  typeId        Int
+  title         String
+  content       String
+  contactPhone  String
+  status        ComplaintStatus @default(RECEIVED)
+  applicantId   Int
+  reviewComment String?
+  processType   ProcessType?
+  processReason String?
+  processedById Int?
+  createdAt     DateTime        @default(now())
+  processedAt   DateTime?
+
+  type          ComplaintType   @relation(fields: [typeId], references: [id])
+  applicant     User            @relation("ApplicantComplaints", fields: [applicantId], references: [id])
+  processedBy   User?           @relation("ProcessedByOfficer", fields: [processedById], references: [id])
+  documents     Document[]
+  notifications Notification[]
+  approval      Approval?
+}
+
+// 증빙 서류 모델 - 민원에 첨부되는 파일 정보
+model Document {
+  id          Int      @id @default(autoincrement())
+  complaintId Int
+  fileName    String
+  storedPath  String
+  mimeType    String
+  fileSize    Int
+  uploadedAt  DateTime @default(now())
+
+  complaint   Complaint @relation(fields: [complaintId], references: [id])
+}
+
+// 타 기관 통보 모델 - 모의 전송 이력 저장
+model Notification {
+  id                  Int      @id @default(autoincrement())
+  complaintId         Int
+  targetAgency        String
+  notificationContent String
+  status              String   @default("SENT")
+  sentAt              DateTime @default(now())
+
+  complaint           Complaint @relation(fields: [complaintId], references: [id])
+}
+
+// 결재 모델 - 담당자가 상신하고 승인권자가 결재하는 문서
+model Approval {
+  id              Int            @id @default(autoincrement())
+  complaintId     Int            @unique
+  title           String
+  content         String
+  requesterId     Int
+  approverId      Int
+  status          ApprovalStatus @default(PENDING)
+  approvalReason  String?
+  rejectionReason String?
+  followUpAction  String?
+  requestedAt     DateTime       @default(now())
+  decidedAt       DateTime?
+
+  complaint       Complaint      @relation(fields: [complaintId], references: [id])
+  requester       User           @relation("RequesterApprovals", fields: [requesterId], references: [id])
+  approver        User           @relation("ApproverApprovals", fields: [approverId], references: [id])
+}
+
+// 모의 민원인 현황 모델 - 시연용 외부 시스템 조회 데이터
+model MockApplicantStatus {
+  id            Int     @id @default(autoincrement())
+  applicantId   Int     @unique
+  incomeDecile  Int     // 소득분위 (1~10)
+  assetAmount   Int     // 재산 규모 (만원 단위)
+  hasVehicle    Boolean @default(false)  // 자동차 소유 여부
+  hasDisability Boolean @default(false)  // 장애인 여부
+
+  applicant     User    @relation(fields: [applicantId], references: [id])
+}

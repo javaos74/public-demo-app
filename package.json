@@ -1,0 +1,24 @@
+{
+  "name": "civil-complaint-app",
+  "version": "1.0.0",
+  "description": "공공기관 민원 처리 시연용 웹 애플리케이션",
+  "private": true,
+  "workspaces": [
+    "client",
+    "server"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspace=server & npm run dev --workspace=client",
+    "dev:client": "npm run dev --workspace=client",
+    "dev:server": "npm run dev --workspace=server",
+    "build": "npm run build --workspace=server && npm run build --workspace=client",
+    "build:client": "npm run build --workspace=client",
+    "build:server": "npm run build --workspace=server",
+    "test": "npm run test --workspace=server && npm run test --workspace=client",
+    "test:client": "npm run test --workspace=client",
+    "test:server": "npm run test --workspace=server"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

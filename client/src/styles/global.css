@@ -1,0 +1,374 @@
+/**
+ * 정부24 플러스(plus.gov.kr) 참고 전역 스타일
+ * 색상 체계, 폰트, 간격, 카드형 레이아웃 스타일을 정의합니다.
+ * 요구사항: 9.1, 9.2, 9.3, 9.5, 9.6, 9.7
+ */
+
+/* ===== 웹 폰트 (Pretendard, Noto Sans KR) ===== */
+@import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.min.css');
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700&display=swap');
+
+/* ===== CSS 변수 — 정부24 색상 체계 ===== */
+:root {
+  /* 주요 색상 */
+  --gov-primary: #1a4b8c;
+  --gov-primary-dark: #0f3567;
+  --gov-primary-light: #2d6bc4;
+  --gov-primary-bg: #e8f0fe;
+
+  /* 보조 색상 */
+  --gov-secondary: #2e7d32;
+  --gov-accent: #f57c00;
+  --gov-danger: #d32f2f;
+
+  /* 중립 색상 */
+  --gov-white: #ffffff;
+  --gov-bg: #f5f6f8;
+  --gov-border: #d9dde3;
+  --gov-text: #1a1a1a;
+  --gov-text-secondary: #555555;
+  --gov-text-muted: #888888;
+
+  /* 간격 */
+  --gov-spacing-xs: 4px;
+  --gov-spacing-sm: 8px;
+  --gov-spacing-md: 16px;
+  --gov-spacing-lg: 24px;
+  --gov-spacing-xl: 32px;
+
+  /* 폰트 */
+  --gov-font-family: 'Pretendard', 'Noto Sans KR', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+
+  /* 그림자 */
+  --gov-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08);
+  --gov-shadow-md: 0 2px 8px rgba(0, 0, 0, 0.1);
+  --gov-shadow-lg: 0 4px 16px rgba(0, 0, 0, 0.12);
+
+  /* 둥글기 */
+  --gov-radius-sm: 4px;
+  --gov-radius-md: 6px;
+  --gov-radius-lg: 8px;
+}
+
+/* ===== 전역 리셋 및 기본 스타일 ===== */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-size: 14px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font-family: var(--gov-font-family);
+  color: var(--gov-text);
+  background-color: var(--gov-bg);
+  line-height: 1.6;
+}
+
+/* ===== 헤더 스타일 ===== */
+.gov-header {
+  background: linear-gradient(135deg, var(--gov-primary) 0%, var(--gov-primary-dark) 100%);
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 var(--gov-spacing-lg);
+  box-shadow: var(--gov-shadow-md);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.gov-header-logo {
+  display: flex;
+  align-items: center;
+  gap: var(--gov-spacing-sm);
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.gov-header-logo-icon {
+  width: 32px;
+  height: 32px;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: var(--gov-radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+}
+
+.gov-header-title {
+  color: var(--gov-white);
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+.gov-header-subtitle {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 12px;
+  margin-left: var(--gov-spacing-sm);
+  font-weight: 400;
+}
+
+.gov-header-user {
+  display: flex;
+  align-items: center;
+  gap: var(--gov-spacing-md);
+}
+
+.gov-header-user-info {
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 13px;
+}
+
+.gov-header-user-role {
+  background: rgba(255, 255, 255, 0.15);
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 11px;
+  color: var(--gov-white);
+  margin-left: var(--gov-spacing-xs);
+}
+
+/* ===== 사이드바 스타일 ===== */
+.gov-sider {
+  background: var(--gov-white) !important;
+  border-right: 1px solid var(--gov-border);
+}
+
+.gov-sider .ant-menu {
+  border-right: none;
+  padding-top: var(--gov-spacing-md);
+}
+
+.gov-sider .ant-menu-item {
+  margin: 2px 8px;
+  border-radius: var(--gov-radius-sm);
+  height: 42px;
+  line-height: 42px;
+  font-size: 14px;
+}
+
+.gov-sider .ant-menu-item-selected {
+  background-color: var(--gov-primary-bg) !important;
+  color: var(--gov-primary) !important;
+  font-weight: 500;
+}
+
+.gov-sider .ant-menu-item:hover:not(.ant-menu-item-selected) {
+  background-color: #f0f2f5;
+}
+
+/* ===== 콘텐츠 영역 스타일 ===== */
+.gov-content-wrapper {
+  padding: var(--gov-spacing-lg);
+  background: var(--gov-bg);
+  min-height: calc(100vh - 56px - 80px);
+}
+
+.gov-content {
+  background: var(--gov-white);
+  padding: var(--gov-spacing-lg);
+  border-radius: var(--gov-radius-md);
+  box-shadow: var(--gov-shadow-sm);
+  min-height: 400px;
+}
+
+/* ===== 푸터 스타일 ===== */
+.gov-footer {
+  background: #2c3e50;
+  color: rgba(255, 255, 255, 0.7);
+  padding: var(--gov-spacing-lg) var(--gov-spacing-lg);
+  text-align: center;
+  font-size: 12px;
+  line-height: 1.8;
+}
+
+.gov-footer-org {
+  font-size: 13px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.9);
+  margin-bottom: var(--gov-spacing-xs);
+}
+
+.gov-footer-info {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 11px;
+}
+
+.gov-footer-divider {
+  width: 40px;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.2);
+  margin: var(--gov-spacing-sm) auto;
+}
+
+/* ===== 카드형 레이아웃 ===== */
+.gov-card {
+  background: var(--gov-white);
+  border-radius: var(--gov-radius-md);
+  box-shadow: var(--gov-shadow-sm);
+  padding: var(--gov-spacing-lg);
+  margin-bottom: var(--gov-spacing-md);
+  border: 1px solid var(--gov-border);
+  transition: box-shadow 0.2s ease;
+}
+
+.gov-card:hover {
+  box-shadow: var(--gov-shadow-md);
+}
+
+.gov-card-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--gov-text);
+  margin-bottom: var(--gov-spacing-md);
+  padding-bottom: var(--gov-spacing-sm);
+  border-bottom: 2px solid var(--gov-primary);
+}
+
+/* ===== 버튼 스타일 통일 ===== */
+.ant-btn-primary {
+  background: var(--gov-primary) !important;
+  border-color: var(--gov-primary) !important;
+  border-radius: var(--gov-radius-sm);
+  font-weight: 500;
+  height: 36px;
+  padding: 0 20px;
+  box-shadow: none;
+}
+
+.ant-btn-primary:hover {
+  background: var(--gov-primary-light) !important;
+  border-color: var(--gov-primary-light) !important;
+}
+
+.ant-btn-default {
+  border-radius: var(--gov-radius-sm);
+  border-color: var(--gov-border);
+  height: 36px;
+  padding: 0 20px;
+}
+
+.ant-btn-default:hover {
+  color: var(--gov-primary) !important;
+  border-color: var(--gov-primary) !important;
+}
+
+/* ===== 테이블 스타일 ===== */
+.ant-table {
+  border-radius: var(--gov-radius-md);
+  overflow: hidden;
+}
+
+.ant-table-thead > tr > th {
+  background: #f8f9fb !important;
+  color: var(--gov-text) !important;
+  font-weight: 600;
+  font-size: 13px;
+  border-bottom: 2px solid var(--gov-border);
+}
+
+.ant-table-tbody > tr:hover > td {
+  background: var(--gov-primary-bg) !important;
+}
+
+/* ===== 폼 스타일 ===== */
+.ant-form-item-label > label {
+  font-weight: 500;
+  color: var(--gov-text);
+}
+
+.ant-input,
+.ant-input-affix-wrapper,
+.ant-select-selector,
+.ant-picker {
+  border-radius: var(--gov-radius-sm) !important;
+}
+
+.ant-input:focus,
+.ant-input-affix-wrapper:focus,
+.ant-input-focused {
+  border-color: var(--gov-primary) !important;
+  box-shadow: 0 0 0 2px rgba(26, 75, 140, 0.1) !important;
+}
+
+/* ===== 페이지 제목 스타일 ===== */
+.gov-page-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--gov-text);
+  margin-bottom: var(--gov-spacing-lg);
+  padding-bottom: var(--gov-spacing-sm);
+  border-bottom: 3px solid var(--gov-primary);
+  display: inline-block;
+}
+
+/* ===== 상태 뱃지 색상 ===== */
+.ant-tag {
+  border-radius: 3px;
+  font-size: 12px;
+  padding: 1px 8px;
+}
+
+/* ===== 모달 스타일 ===== */
+.ant-modal-header {
+  border-bottom: 2px solid var(--gov-primary);
+}
+
+.ant-modal-title {
+  font-weight: 600;
+}
+
+/* ===== Steps 컴포넌트 스타일 ===== */
+.ant-steps-item-finish .ant-steps-item-icon {
+  border-color: var(--gov-primary);
+}
+
+.ant-steps-item-finish .ant-steps-item-icon > .ant-steps-icon {
+  color: var(--gov-primary);
+}
+
+/* ===== 로그인 페이지 스타일 ===== */
+.gov-login-container {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, var(--gov-primary) 0%, var(--gov-primary-dark) 50%, #0a2a52 100%);
+}
+
+.gov-login-card {
+  background: var(--gov-white);
+  border-radius: var(--gov-radius-lg);
+  box-shadow: var(--gov-shadow-lg);
+  padding: 40px;
+  width: 400px;
+  max-width: 90vw;
+}
+
+.gov-login-title {
+  text-align: center;
+  margin-bottom: var(--gov-spacing-xl);
+}
+
+.gov-login-title h2 {
+  color: var(--gov-primary);
+  font-size: 22px;
+  font-weight: 700;
+  margin-bottom: var(--gov-spacing-xs);
+}
+
+.gov-login-title p {
+  color: var(--gov-text-muted);
+  font-size: 13px;
+}
