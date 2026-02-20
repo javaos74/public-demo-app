@@ -1,6 +1,0 @@
-/**
- * 결재 서비스 및 API 통합 테스트
- * supertest를 사용하여 결재 상신, 목록 조회, 상세 조회 API를 테스트합니다.
- */
-export {};
-//# sourceMappingURL=approval.service.test.d.ts.map
