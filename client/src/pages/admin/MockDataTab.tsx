@@ -1,14 +1,14 @@
 /**
  * 모의 민원인 현황 관리 탭
- * 소득분위, 재산 규모, 자동차 소유 여부, 장애인 여부 데이터를 CRUD 관리합니다.
+ * 소득분위, 재산 규모, 자동차 소유 여부, 장애인 여부, 차량 정보 데이터를 CRUD 관리합니다.
  * 요구사항: 10.3, 10.7
  */
 
 import { useEffect, useState, useCallback } from 'react';
 import {
-  Table, Button, Modal, Form, InputNumber, Switch, Space, Alert, Popconfirm, message,
+  Table, Button, Modal, Form, InputNumber, Input, Switch, Space, Alert, Popconfirm, message,
 } from 'antd';
-import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
+import { PlusOutlined, EditOutlined, DeleteOutlined, CarOutlined } from '@ant-design/icons';
 import type { ColumnsType, TablePaginationConfig } from 'antd/es/table';
 import {
   getMockDataList, createMockData, updateMockData, deleteMockData,
@@ -60,7 +60,7 @@ export default function MockDataTab() {
   const handleAdd = () => {
     setEditingItem(null);
     form.resetFields();
-    form.setFieldsValue({ hasVehicle: false, hasDisability: false });
+    form.setFieldsValue({ hasVehicle: false, hasDisability: false, vehicles: [] });
     setModalOpen(true);
   };
 
@@ -73,6 +73,10 @@ export default function MockDataTab() {
       assetAmount: record.assetAmount,
       hasVehicle: record.hasVehicle,
       hasDisability: record.hasDisability,
+      vehicles: record.vehicles?.map((v) => ({
+        modelName: v.modelName,
+        registrationNumber: v.registrationNumber,
+      })) ?? [],
     });
     setModalOpen(true);
   };
@@ -100,6 +104,7 @@ export default function MockDataTab() {
           assetAmount: values.assetAmount,
           hasVehicle: values.hasVehicle,
           hasDisability: values.hasDisability,
+          vehicles: values.hasVehicle ? (values.vehicles ?? []) : [],
         };
         await updateMockData(editingItem.id, updateData);
         message.success('수정되었습니다');
@@ -111,6 +116,7 @@ export default function MockDataTab() {
           assetAmount: values.assetAmount,
           hasVehicle: values.hasVehicle,
           hasDisability: values.hasDisability,
+          vehicles: values.hasVehicle ? (values.vehicles ?? []) : [],
         };
         await createMockData(createData);
         message.success('등록되었습니다');
@@ -156,8 +162,9 @@ export default function MockDataTab() {
       title: '자동차 소유',
       dataIndex: 'hasVehicle',
       key: 'hasVehicle',
-      width: 100,
-      render: (value: boolean) => (value ? '소유' : '미소유'),
+      width: 120,
+      render: (value: boolean, record: MockApplicantStatus) =>
+        value ? `소유 (${record.vehicles?.length ?? 0}대)` : '미소유',
     },
     {
       title: '장애인 여부',
@@ -244,6 +251,46 @@ export default function MockDataTab() {
           </Form.Item>
           <Form.Item name="hasVehicle" label="자동차 소유 여부" valuePropName="checked">
             <Switch checkedChildren="소유" unCheckedChildren="미소유" />
+          </Form.Item>
+          {/* 자동차 소유 시 차량 정보 입력 */}
+          <Form.Item noStyle shouldUpdate={(prev, cur) => prev.hasVehicle !== cur.hasVehicle}>
+            {({ getFieldValue }) =>
+              getFieldValue('hasVehicle') ? (
+                <Form.List name="vehicles">
+                  {(fields, { add, remove }) => (
+                    <div style={{ marginBottom: 16 }}>
+                      <div style={{ marginBottom: 8, fontWeight: 500 }}>
+                        <CarOutlined /> 차량 정보
+                      </div>
+                      {fields.map(({ key, name, ...restField }) => (
+                        <Space key={key} style={{ display: 'flex', marginBottom: 8 }} align="baseline">
+                          <Form.Item
+                            {...restField}
+                            name={[name, 'modelName']}
+                            rules={[{ required: true, message: '모델명 입력' }]}
+                          >
+                            <Input placeholder="모델명 (예: 현대 소나타)" style={{ width: 180 }} />
+                          </Form.Item>
+                          <Form.Item
+                            {...restField}
+                            name={[name, 'registrationNumber']}
+                            rules={[{ required: true, message: '등록번호 입력' }]}
+                          >
+                            <Input placeholder="등록번호 (예: 152나5820)" style={{ width: 180 }} />
+                          </Form.Item>
+                          <Button type="link" danger onClick={() => remove(name)} size="small">
+                            삭제
+                          </Button>
+                        </Space>
+                      ))}
+                      <Button type="dashed" onClick={() => add()} block icon={<PlusOutlined />}>
+                        차량 추가
+                      </Button>
+                    </div>
+                  )}
+                </Form.List>
+              ) : null
+            }
           </Form.Item>
           <Form.Item name="hasDisability" label="장애인 여부" valuePropName="checked">
             <Switch checkedChildren="해당" unCheckedChildren="비해당" />

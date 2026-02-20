@@ -114,6 +114,13 @@ export interface Approval {
   approver?: User;
 }
 
+/** 모의 차량 정보 */
+export interface MockVehicle {
+  id: number;
+  modelName: string;
+  registrationNumber: string;
+}
+
 /** 모의 민원인 현황 */
 export interface MockApplicantStatus {
   id: number;
@@ -122,6 +129,7 @@ export interface MockApplicantStatus {
   assetAmount: number;
   hasVehicle: boolean;
   hasDisability: boolean;
+  vehicles?: MockVehicle[];
   applicant?: User;
 }
 
@@ -204,6 +212,7 @@ export interface CreateMockDataRequest {
   assetAmount: number;
   hasVehicle: boolean;
   hasDisability: boolean;
+  vehicles?: { modelName: string; registrationNumber: string }[];
 }
 
 /** 모의 데이터 수정 요청 */
@@ -212,6 +221,7 @@ export interface UpdateMockDataRequest {
   assetAmount?: number;
   hasVehicle?: boolean;
   hasDisability?: boolean;
+  vehicles?: { modelName: string; registrationNumber: string }[];
 }
 
 /** 사용자 생성 요청 */

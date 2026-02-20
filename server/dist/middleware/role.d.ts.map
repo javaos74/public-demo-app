@@ -1,0 +1,1 @@
+{"version":3,"file":"role.d.ts","sourceRoot":"","sources":["../../src/middleware/role.ts"],"names":[],"mappings":"AAAA;;;;GAIG;AAEH,OAAO,EAAmC,cAAc,EAAE,MAAM,SAAS,CAAC;AAK1E,KAAK,QAAQ,GAAG,WAAW,GAAG,SAAS,GAAG,UAAU,CAAC;AAErD;;;;GAIG;AACH,wBAAgB,cAAc,CAAC,GAAG,KAAK,EAAE,QAAQ,EAAE,GAAG,cAAc,CAkBnE"}

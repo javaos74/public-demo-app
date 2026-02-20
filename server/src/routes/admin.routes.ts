@@ -77,13 +77,14 @@ router.post(
   '/mock-data',
   async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
-      const { applicantId, incomeDecile, assetAmount, hasVehicle, hasDisability } = req.body;
+      const { applicantId, incomeDecile, assetAmount, hasVehicle, hasDisability, vehicles } = req.body;
       const result = await createMockData({
         applicantId: Number(applicantId),
         incomeDecile: Number(incomeDecile),
         assetAmount: Number(assetAmount),
         hasVehicle: !!hasVehicle,
         hasDisability: !!hasDisability,
+        vehicles: Array.isArray(vehicles) ? vehicles : undefined,
       });
       res.status(201).json(result);
     } catch (error) {
@@ -105,12 +106,13 @@ router.put(
         throw validationError('유효하지 않은 ID입니다');
       }
 
-      const { incomeDecile, assetAmount, hasVehicle, hasDisability } = req.body;
+      const { incomeDecile, assetAmount, hasVehicle, hasDisability, vehicles } = req.body;
       const input: Record<string, unknown> = {};
       if (incomeDecile !== undefined) input.incomeDecile = Number(incomeDecile);
       if (assetAmount !== undefined) input.assetAmount = Number(assetAmount);
       if (hasVehicle !== undefined) input.hasVehicle = !!hasVehicle;
       if (hasDisability !== undefined) input.hasDisability = !!hasDisability;
+      if (vehicles !== undefined) input.vehicles = Array.isArray(vehicles) ? vehicles : [];
 
       const result = await updateMockData(id, input);
       res.json(result);

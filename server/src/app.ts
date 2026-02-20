@@ -1,5 +1,6 @@
 import express from 'express';
 import cors from 'cors';
+import path from 'path';
 import { errorHandler } from './middleware/error-handler';
 import authRoutes from './routes/auth.routes';
 import complaintRoutes from './routes/complaint.routes';
@@ -33,6 +34,18 @@ app.use('/api/complaints', complaintRoutes);
 app.use('/api/approvals', approvalRoutes);
 app.use('/api/inquiry', inquiryRoutes);
 app.use('/api/admin', adminRoutes);
+
+// 운영 환경: 프론트엔드 정적 파일 서빙
+const clientPath = path.join(__dirname, 'client');
+app.use(express.static(clientPath));
+
+// SPA fallback - API가 아닌 모든 요청을 index.html로 전달
+app.get('{*path}', (_req, res, next) => {
+  if (_req.path.startsWith('/api')) {
+    return next();
+  }
+  res.sendFile(path.join(clientPath, 'index.html'));
+});
 
 // 전역 오류 처리 미들웨어 (모든 라우트 등록 후 마지막에 추가)
 app.use(errorHandler);

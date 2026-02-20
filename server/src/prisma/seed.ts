@@ -74,7 +74,7 @@ async function main() {
   }
 
   // === 모의 민원인 현황 데이터 ===
-  await prisma.mockApplicantStatus.upsert({
+  const mockStatus = await prisma.mockApplicantStatus.upsert({
     where: { applicantId: applicant.id },
     update: {},
     create: {
@@ -86,6 +86,22 @@ async function main() {
     },
   });
   console.log('✅ 모의 민원인 현황 데이터 생성 완료');
+
+  // === 모의 차량 정보 데이터 ===
+  const vehicleData = [
+    { mockStatusId: mockStatus.id, modelName: '현대 소나타', registrationNumber: '152나5820' },
+    { mockStatusId: mockStatus.id, modelName: '기아 K5', registrationNumber: '38머1234' },
+  ];
+  for (const v of vehicleData) {
+    // 기존 데이터가 있으면 건너뛰기
+    const existing = await prisma.mockVehicle.findFirst({
+      where: { mockStatusId: v.mockStatusId, registrationNumber: v.registrationNumber },
+    });
+    if (!existing) {
+      await prisma.mockVehicle.create({ data: v });
+    }
+  }
+  console.log('✅ 모의 차량 정보 데이터 생성 완료');
 
   console.log('🎉 시드 데이터 삽입이 완료되었습니다!');
 }

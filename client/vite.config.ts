@@ -11,6 +11,11 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
     },
   },
+  // 운영 빌드 시 server/dist/client 경로로 출력
+  build: {
+    outDir: path.resolve(__dirname, '../server/dist/client'),
+    emptyOutDir: true,
+  },
   server: {
     port: 3000,
     // 백엔드 API 프록시 설정

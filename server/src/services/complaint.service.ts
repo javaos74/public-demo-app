@@ -408,9 +408,10 @@ export async function getApplicantStatus(complaintId: number, user: UserInfo) {
     throw notFoundError('해당 민원을 찾을 수 없습니다');
   }
 
-  // 민원 신청인의 모의 현황 데이터 조회
+  // 민원 신청인의 모의 현황 데이터 조회 (차량 정보 포함)
   const mockStatus = await prisma.mockApplicantStatus.findUnique({
     where: { applicantId: complaint.applicantId },
+    include: { vehicles: true },
   });
 
   if (!mockStatus) {
@@ -424,6 +425,11 @@ export async function getApplicantStatus(complaintId: number, user: UserInfo) {
     assetAmount: mockStatus.assetAmount,
     hasVehicle: mockStatus.hasVehicle,
     hasDisability: mockStatus.hasDisability,
+    vehicles: mockStatus.vehicles.map((v) => ({
+      id: v.id,
+      modelName: v.modelName,
+      registrationNumber: v.registrationNumber,
+    })),
   };
 }
 

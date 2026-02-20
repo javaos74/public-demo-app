@@ -287,8 +287,21 @@ export default function ComplaintReviewPage() {
               {applicantStatus.assetAmount.toLocaleString('ko-KR')}만원
             </Descriptions.Item>
             <Descriptions.Item label="자동차 소유 여부">
-              {applicantStatus.hasVehicle ? '소유' : '미소유'}
+              {applicantStatus.hasVehicle
+                ? `소유 (${applicantStatus.vehicles?.length ?? 0}대)`
+                : '미소유'}
             </Descriptions.Item>
+            {applicantStatus.hasVehicle && applicantStatus.vehicles && applicantStatus.vehicles.length > 0 && (
+              <Descriptions.Item label="차량 정보" span={2}>
+                <ul style={{ margin: 0, paddingLeft: 20 }}>
+                  {applicantStatus.vehicles.map((v) => (
+                    <li key={v.id}>
+                      {v.modelName} / {v.registrationNumber}
+                    </li>
+                  ))}
+                </ul>
+              </Descriptions.Item>
+            )}
             <Descriptions.Item label="장애인 여부">
               {applicantStatus.hasDisability ? '해당' : '비해당'}
             </Descriptions.Item>

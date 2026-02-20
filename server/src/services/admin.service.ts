@@ -33,6 +33,7 @@ export interface CreateMockDataInput {
   assetAmount: number;   // 재산 규모 (만원)
   hasVehicle: boolean;   // 자동차 소유 여부
   hasDisability: boolean; // 장애인 여부
+  vehicles?: { modelName: string; registrationNumber: string }[]; // 차량 정보
 }
 
 /** 모의 민원인 현황 수정 요청 인터페이스 */
@@ -41,6 +42,7 @@ export interface UpdateMockDataInput {
   assetAmount?: number;
   hasVehicle?: boolean;
   hasDisability?: boolean;
+  vehicles?: { modelName: string; registrationNumber: string }[]; // 차량 정보 (전체 교체)
 }
 
 /**
@@ -60,6 +62,7 @@ export async function getMockDataList(query: PaginationQuery) {
         applicant: {
           select: { id: true, userId: true, name: true, role: true, phone: true },
         },
+        vehicles: true,
       },
       orderBy: { id: 'desc' },
       skip,
@@ -113,11 +116,15 @@ export async function createMockData(input: CreateMockDataInput) {
       assetAmount,
       hasVehicle: !!hasVehicle,
       hasDisability: !!hasDisability,
+      vehicles: input.vehicles && input.vehicles.length > 0
+        ? { create: input.vehicles }
+        : undefined,
     },
     include: {
       applicant: {
         select: { id: true, userId: true, name: true, role: true, phone: true },
       },
+      vehicles: true,
     },
   });
 
@@ -155,6 +162,16 @@ export async function updateMockData(id: number, input: UpdateMockDataInput) {
   if (input.hasVehicle !== undefined) data.hasVehicle = input.hasVehicle;
   if (input.hasDisability !== undefined) data.hasDisability = input.hasDisability;
 
+  // 차량 정보가 전달된 경우 기존 차량 삭제 후 새로 생성
+  if (input.vehicles !== undefined) {
+    await prisma.mockVehicle.deleteMany({ where: { mockStatusId: id } });
+    if (input.vehicles.length > 0) {
+      await prisma.mockVehicle.createMany({
+        data: input.vehicles.map((v) => ({ ...v, mockStatusId: id })),
+      });
+    }
+  }
+
   const updated = await prisma.mockApplicantStatus.update({
     where: { id },
     data,
@@ -162,6 +179,7 @@ export async function updateMockData(id: number, input: UpdateMockDataInput) {
       applicant: {
         select: { id: true, userId: true, name: true, role: true, phone: true },
       },
+      vehicles: true,
     },
   });
 
@@ -179,6 +197,7 @@ export async function deleteMockData(id: number) {
     throw notFoundError('해당 모의 데이터를 찾을 수 없습니다');
   }
 
+  await prisma.mockVehicle.deleteMany({ where: { mockStatusId: id } });
   await prisma.mockApplicantStatus.delete({ where: { id } });
   return { message: '모의 데이터가 삭제되었습니다' };
 }
