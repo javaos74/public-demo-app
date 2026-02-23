@@ -3,6 +3,7 @@
  * POST /api/complaints — 민원 접수 (민원_신청인 전용, 파일 업로드 지원)
  * GET /api/complaints — 민원 목록 조회 (인증 필요)
  * GET /api/complaints/:id — 민원 상세 조회 (인증 필요)
+ * DELETE /api/complaints/:id — 민원 삭제 (민원_신청인 전용, RECEIVED 상태만)
  * GET /api/complaints/:id/documents/:docId — 파일 다운로드 (인증 필요)
  */
 
@@ -23,6 +24,7 @@ import {
   processComplaint,
   createNotification,
   getNotifications,
+  deleteComplaint,
   ComplaintStatus,
 } from '../services/complaint.service';
 import { validationError, notFoundError, forbiddenError } from '../utils/errors';
@@ -147,6 +149,33 @@ router.get(
       const complaint = await getComplaintById(id, user);
 
       res.json(complaint);
+    } catch (error) {
+      next(error);
+    }
+  },
+);
+
+/**
+ * DELETE /api/complaints/:id
+ * 민원 삭제 — 민원_신청인(APPLICANT) 역할만 삭제 가능
+ * RECEIVED 상태의 본인 민원만 삭제 가능, 관련 데이터 연쇄 삭제
+ */
+router.delete(
+  '/:id',
+  roleMiddleware('APPLICANT'),
+  async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+    try {
+      const user = req.user!;
+      const id = Number(req.params.id);
+
+      if (isNaN(id)) {
+        throw validationError('유효하지 않은 민원 ID입니다');
+      }
+
+      // 민원 삭제 서비스 호출
+      await deleteComplaint(id, user.id);
+
+      res.json({ message: '민원이 삭제되었습니다' });
     } catch (error) {
       next(error);
     }

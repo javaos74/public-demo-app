@@ -115,3 +115,18 @@ export function getDocumentDownloadUrl(
 ): string {
   return `/api/complaints/${complaintId}/documents/${docId}`;
 }
+
+/**
+ * 민원 삭제 — 민원_신청인 전용, RECEIVED 상태만 삭제 가능
+ * 관련 Document, Notification, Approval 데이터를 연쇄 삭제합니다.
+ * @param id 삭제할 민원 ID
+ * @returns 삭제 성공 메시지
+ * @throws 403 — 본인이 접수한 민원만 삭제할 수 있습니다
+ * @throws 404 — 해당 민원을 찾을 수 없습니다
+ * @throws 409 — 접수완료 상태의 민원만 삭제할 수 있습니다
+ */
+export async function deleteComplaint(id: number): Promise<{ message: string }> {
+  const response = await api.delete<{ message: string }>(`/complaints/${id}`);
+  return response.data;
+}
+

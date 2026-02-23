@@ -77,6 +77,7 @@ graph TB
 stateDiagram-v2
     [*] --> 접수완료: 민원_신청인이 민원 접수
     접수완료 --> 검토중: 담당자가 민원 상세 열람
+    접수완료 --> [*]: 민원_신청인이 민원 삭제
     검토중 --> 처리완료: 담당자가 처리 유형 선택 및 저장
     처리완료 --> 결재대기: 담당자가 결재 상신
     결재대기 --> 승인완료: 승인권자가 승인
@@ -186,6 +187,7 @@ interface ComplaintListResponse {
 }
 
 // GET /api/complaints/:id - 민원 상세 조회
+// DELETE /api/complaints/:id - 민원 삭제 (민원_신청인 전용, RECEIVED 상태만)
 // PUT /api/complaints/:id/review - 검토 의견 저장
 interface ReviewRequest {
   reviewComment: string;  // 검토 의견
@@ -196,6 +198,22 @@ interface ProcessComplaintRequest {
   processType: 'APPROVE' | 'REJECT' | 'HOLD' | 'TRANSFER';  // 처리 유형
   processReason: string;  // 처리 사유
 }
+
+// DELETE /api/complaints/:id - 민원 삭제
+// 요청: 없음 (URL 파라미터로 민원 ID 전달)
+// 응답:
+interface DeleteComplaintResponse {
+  message: string;  // "민원이 삭제되었습니다"
+}
+// 제약 조건:
+// - 민원_신청인(APPLICANT) 역할만 삭제 가능
+// - 본인이 접수한 민원만 삭제 가능 (applicantId === 요청 사용자 ID)
+// - 상태가 RECEIVED인 민원만 삭제 가능
+// - 관련 Document, Notification, Approval 데이터를 연쇄 삭제(cascade delete)
+// 오류 응답:
+// - 403: "본인이 접수한 민원만 삭제할 수 있습니다" (타인 민원 삭제 시도)
+// - 409: "접수완료 상태의 민원만 삭제할 수 있습니다" (RECEIVED 외 상태)
+// - 404: "해당 민원을 찾을 수 없습니다" (존재하지 않는 민원)
 ```
 
 #### 3. 타 기관 통보 API (External Notification API)
@@ -342,7 +360,7 @@ interface LayoutProps {
 
 | 역할 | 페이지 | 설명 |
 |------|--------|------|
-| 민원_신청인 | 대시보드 | 본인 민원 목록, 접수 현황 |
+| 민원_신청인 | 대시보드 | 본인 민원 목록, 접수 현황, 민원 삭제 |
 | 민원_신청인 | 민원 접수 | 민원 양식 작성, 증빙 서류 첨부 |
 | 민원_신청인 | 민원 상세 | 본인 민원 진행 상황 확인 |
 | 담당자 | 대시보드 | 전체 민원 목록, 상태별 필터 |
@@ -622,6 +640,7 @@ function generateReceiptNumber(date: Date, dailySequence: number): string {
 | 현재 상태 | 허용되는 다음 상태 | 트리거(Trigger) |
 |-----------|-------------------|-----------------|
 | RECEIVED | REVIEWING | 담당자가 민원 상세 열람 |
+| RECEIVED | (삭제) | 민원_신청인이 본인 민원 삭제 |
 | REVIEWING | PROCESSED | 담당자가 처리 유형 선택 및 저장 |
 | PROCESSED | PENDING_APPROVAL | 담당자가 결재 상신 |
 | PENDING_APPROVAL | APPROVED | 승인권자가 승인 |
@@ -771,6 +790,24 @@ function generateReceiptNumber(date: Date, dailySequence: number): string {
 
 **검증 대상: 요구사항 10.6**
 
+### 속성 24: 민원 삭제 시 연쇄 삭제 (Complaint Deletion Cascade)
+
+*임의의* RECEIVED 상태 민원과 해당 민원에 연결된 증빙_서류(Document), 타_기관_통보(Notification), 결재(Approval) 데이터에 대해, 민원을 삭제하면 해당 민원과 관련된 모든 Document, Notification, Approval 레코드가 함께 삭제되어야 한다.
+
+**검증 대상: 요구사항 11.2**
+
+### 속성 25: RECEIVED 상태만 삭제 가능 (Only RECEIVED Status Deletable)
+
+*임의의* RECEIVED가 아닌 상태(REVIEWING, PROCESSED, PENDING_APPROVAL, APPROVED, REJECTED)를 가진 민원에 대해, 삭제를 시도하면 항상 거부되고 민원 데이터가 변경되지 않아야 한다.
+
+**검증 대상: 요구사항 11.4**
+
+### 속성 26: 본인 민원만 삭제 가능 (Owner-only Deletion Access Control)
+
+*임의의* 민원_신청인과 해당 신청인이 접수하지 않은 민원에 대해, 삭제를 시도하면 항상 거부되고 민원 데이터가 변경되지 않아야 한다.
+
+**검증 대상: 요구사항 11.5**
+
 
 ## 오류 처리 (Error Handling)
 
@@ -818,6 +855,14 @@ interface ApiError {
 - 존재하지 않는 접수번호: "해당 접수번호의 민원을 찾을 수 없습니다" 메시지 표시
 - 본인 민원이 아닌 경우: "본인이 접수한 민원만 조회할 수 있습니다" 메시지 표시
 
+### 민원 삭제 오류 처리 (Complaint Deletion Error Handling)
+
+- 타인 민원 삭제 시도 (403): "본인이 접수한 민원만 삭제할 수 있습니다" 메시지 표시
+- RECEIVED 외 상태 삭제 시도 (409): "접수완료 상태의 민원만 삭제할 수 있습니다" 메시지 표시
+- 존재하지 않는 민원 삭제 시도 (404): "해당 민원을 찾을 수 없습니다" 메시지 표시
+- 서버 오류 (500): "민원 삭제에 실패하였습니다. 잠시 후 다시 시도해주세요" 메시지 표시
+- 삭제 확인 다이얼로그에서 "취소" 클릭 시: 삭제 작업을 수행하지 않고 민원 목록 화면 유지
+
 ## 테스트 전략 (Testing Strategy)
 
 ### 이중 테스트 접근법 (Dual Testing Approach)
@@ -843,6 +888,7 @@ interface ApiError {
 - **SMS 인증**: 올바른/잘못된 인증 코드에 대한 결과 확인
 - **파일 업로드**: 허용/비허용 파일 형식 및 크기에 대한 검증
 - **UI 컴포넌트**: 로그인 폼, 민원 접수 폼, 결재 양식 등의 렌더링 및 상호작용 테스트
+- **민원 삭제**: 삭제 확인 다이얼로그 표시, 삭제 성공 메시지 및 목록 갱신, 취소 시 목록 유지, 서버 오류 시 에러 메시지 표시
 - **초기 데이터**: 시연용 사전 등록 사용자 3명, 민원 유형 4종 존재 확인
 
 ### 속성 기반 테스트 (Property-Based Tests)
@@ -877,6 +923,9 @@ interface ApiError {
 21. **최종 상태 사유 표시**: 임의의 최종 상태 민원 조회 시 사유 포함 확인
 22. **페이지네이션 정확성**: 임의의 페이지 크기/번호에 대한 결과 정확성 확인
 23. **시연 데이터 CRUD**: 임의의 데이터 등록/수정/삭제 후 조회 결과 정확성 확인
+24. **민원 삭제 연쇄 삭제**: 임의의 RECEIVED 상태 민원 삭제 시 관련 Document, Notification, Approval 데이터 함께 삭제 확인
+25. **RECEIVED 상태만 삭제 가능**: 임의의 RECEIVED 외 상태 민원 삭제 시도 시 항상 거부 확인
+26. **본인 민원만 삭제 가능**: 임의의 타인 민원 삭제 시도 시 항상 거부 확인
 
 ### 테스트 구조 (Test Structure)
 
@@ -896,6 +945,7 @@ tests/
 │   ├── process.property.test.ts   # 속성 13, 14
 │   ├── approval.property.test.ts  # 속성 15, 16, 17, 18, 19
 │   ├── inquiry.property.test.ts   # 속성 20, 21
+│   ├── deletion.property.test.ts  # 속성 24, 25, 26
 │   └── admin.property.test.ts     # 속성 22, 23
 └── integration/                   # 통합 테스트
     └── workflow.test.ts           # 전체 민원 처리 흐름 E2E 테스트

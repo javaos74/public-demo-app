@@ -283,10 +283,65 @@
 - [x] 20. 최종 체크포인트 — 전체 시스템 검증
   - 모든 테스트가 통과하는지 확인하고, 질문이 있으면 사용자에게 문의합니다.
 
+- [ ] 21. 민원 삭제 백엔드 API 구현
+  - [x] 21.1 `server/src/services/complaint.service.ts`에 `deleteComplaint` 함수 구현
+    - 민원 ID와 요청 사용자 ID를 인자로 받아 민원 삭제 처리
+    - 민원 존재 여부 확인 (없으면 404 NOT_FOUND 오류)
+    - 본인 민원 여부 확인 (applicantId !== 요청 사용자 ID이면 403 FORBIDDEN 오류, "본인이 접수한 민원만 삭제할 수 있습니다")
+    - 민원 상태가 RECEIVED인지 확인 (아니면 409 INVALID_STATUS_TRANSITION 오류, "접수완료 상태의 민원만 삭제할 수 있습니다")
+    - 관련 Document, Notification, Approval 데이터를 연쇄 삭제(cascade delete) 후 민원 삭제
+    - _요구사항: 11.2, 11.4, 11.5_
+  - [ ] 21.2 `server/src/routes/complaint.routes.ts`에 `DELETE /api/complaints/:id` 라우트 추가
+    - `authMiddleware` 및 `roleMiddleware('APPLICANT')` 적용
+    - `deleteComplaint` 서비스 함수 호출
+    - 성공 시 `{ message: "민원이 삭제되었습니다" }` 응답 반환
+    - _요구사항: 11.1, 11.2, 11.3_
+  - [ ]* 21.3 `server/src/services/complaint.service.test.ts`에 민원 삭제 단위 테스트 추가
+    - RECEIVED 상태 민원 삭제 성공 케이스
+    - 본인 민원이 아닌 경우 403 오류 케이스
+    - RECEIVED 외 상태 삭제 시도 시 409 오류 케이스
+    - 존재하지 않는 민원 삭제 시도 시 404 오류 케이스
+    - 관련 Document, Notification, Approval 연쇄 삭제 확인
+    - _요구사항: 11.2, 11.4, 11.5, 11.7_
+
+- [ ] 22. 민원 삭제 속성 기반 테스트 구현
+  - [ ]* 22.1 `server/src/services/deletion.property.test.ts`에 속성 24 테스트 작성
+    - **속성 24: 민원 삭제 시 연쇄 삭제 (Complaint Deletion Cascade)**
+    - 임의의 RECEIVED 상태 민원과 관련 Document, Notification, Approval 데이터 생성 후 삭제 시 모든 관련 레코드 함께 삭제 확인
+    - **검증 대상: 요구사항 11.2**
+  - [ ]* 22.2 `server/src/services/deletion.property.test.ts`에 속성 25 테스트 작성
+    - **속성 25: RECEIVED 상태만 삭제 가능 (Only RECEIVED Status Deletable)**
+    - 임의의 RECEIVED 외 상태(REVIEWING, PROCESSED, PENDING_APPROVAL, APPROVED, REJECTED) 민원 삭제 시도 시 항상 거부 확인
+    - **검증 대상: 요구사항 11.4**
+  - [ ]* 22.3 `server/src/services/deletion.property.test.ts`에 속성 26 테스트 작성
+    - **속성 26: 본인 민원만 삭제 가능 (Owner-only Deletion Access Control)**
+    - 임의의 민원_신청인이 본인이 접수하지 않은 민원 삭제 시도 시 항상 거부 확인
+    - **검증 대상: 요구사항 11.5**
+
+- [ ] 23. 체크포인트 — 민원 삭제 백엔드 검증
+  - 모든 테스트가 통과하는지 확인하고, 질문이 있으면 사용자에게 문의합니다.
+
+- [ ] 24. 민원 삭제 프론트엔드 구현
+  - [x] 24.1 `client/src/services/complaint.service.ts`에 `deleteComplaint` API 호출 함수 추가
+    - `DELETE /api/complaints/:id` 엔드포인트 호출
+    - 오류 응답 처리 (403, 404, 409, 500)
+    - _요구사항: 11.1, 11.7_
+  - [ ] 24.2 `client/src/pages/applicant/DashboardPage.tsx`에 민원 삭제 기능 추가
+    - 민원 목록 테이블에 "삭제" 버튼 컬럼 추가
+    - RECEIVED 상태가 아닌 민원의 삭제 버튼은 비활성화(disabled) 처리
+    - 삭제 버튼 클릭 시 Ant Design `Modal.confirm` 삭제 확인 다이얼로그 표시
+    - 확인 클릭 시 `deleteComplaint` API 호출 후 "민원이 삭제되었습니다" 성공 메시지 표시 및 민원 목록 갱신
+    - 취소 클릭 시 다이얼로그 닫기, 민원 목록 유지
+    - 서버 오류 시 "민원 삭제에 실패하였습니다. 잠시 후 다시 시도해주세요" 오류 메시지 표시
+    - _요구사항: 11.1, 11.3, 11.4, 11.6, 11.7_
+
+- [ ] 25. 최종 체크포인트 — 민원 삭제 기능 전체 검증
+  - 모든 테스트가 통과하는지 확인하고, 질문이 있으면 사용자에게 문의합니다.
+
 ## 참고 사항
 
 - `*` 표시된 태스크는 선택 사항이며, 빠른 MVP를 위해 건너뛸 수 있습니다
 - 각 태스크는 특정 요구사항을 참조하여 추적 가능합니다
 - 체크포인트에서 점진적 검증을 수행합니다
-- 속성 기반 테스트는 설계 문서의 23개 정확성 속성을 검증합니다
+- 속성 기반 테스트는 설계 문서의 26개 정확성 속성을 검증합니다
 - 단위 테스트는 구체적인 예시와 엣지 케이스를 검증합니다

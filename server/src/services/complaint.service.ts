@@ -567,3 +567,46 @@ export async function getNotifications(complaintId: number) {
   return notifications;
 }
 
+/**
+ * 민원 삭제 — 본인 민원만, RECEIVED 상태만 삭제 가능
+ * 관련 Document, Notification, Approval 데이터를 연쇄 삭제(cascade delete) 후 민원 삭제
+ * @param id - 민원 ID
+ * @param userId - 요청 사용자 ID
+ * @returns 삭제 결과 메시지
+ */
+export async function deleteComplaint(id: number, userId: number) {
+  // 민원 존재 여부 확인
+  const complaint = await prisma.complaint.findUnique({
+    where: { id },
+  });
+
+  if (!complaint) {
+    throw notFoundError('해당 민원을 찾을 수 없습니다');
+  }
+
+  // 본인 민원 여부 확인
+  if (complaint.applicantId !== userId) {
+    throw forbiddenError('본인이 접수한 민원만 삭제할 수 있습니다');
+  }
+
+  // 민원 상태가 RECEIVED인지 확인
+  if (complaint.status !== 'RECEIVED') {
+    throw invalidStatusTransitionError('접수완료 상태의 민원만 삭제할 수 있습니다');
+  }
+
+  // 트랜잭션으로 관련 데이터 연쇄 삭제 후 민원 삭제
+  await prisma.$transaction(async (tx) => {
+    // 관련 Document 삭제
+    await tx.document.deleteMany({ where: { complaintId: id } });
+    // 관련 Notification 삭제
+    await tx.notification.deleteMany({ where: { complaintId: id } });
+    // 관련 Approval 삭제
+    await tx.approval.deleteMany({ where: { complaintId: id } });
+    // 민원 삭제
+    await tx.complaint.delete({ where: { id } });
+  });
+
+  return { message: '민원이 삭제되었습니다' };
+}
+
+
